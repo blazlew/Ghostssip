@@ -8,9 +8,9 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
-        android:text="username"
+        android:text="@string/name"
         android:fontFamily="sans-serif-thin"
-        android:textColor="@color/colorAccent"
+        android:textColor="@color/material_grey_50"
         android:id="@+id/title"
         android:textSize="18sp" />
 

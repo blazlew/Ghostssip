@@ -1,3 +1,8 @@
 <resources>
     <string name="app_name">Ghostssip</string>
+    <string name="name">Name</string>
+    <string name="change_your_name_here">Change your name here:</string>
+    <string name="save">SAVE</string>
+    <string name="name_saved">Name saved</string>
+    <string name="name_cant_be_empty">Name can\'t be empty</string>
 </resources>
