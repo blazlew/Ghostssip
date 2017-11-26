@@ -10,7 +10,7 @@
         android:layout_gravity="center"
         android:text="@string/name"
         android:fontFamily="sans-serif-thin"
-        android:textColor="@color/material_grey_50"
+        android:textColor="@color/cfdialog_button_white_text_color"
         android:id="@+id/title"
         android:textSize="18sp"
         android:layout_marginStart="14dp"/>
