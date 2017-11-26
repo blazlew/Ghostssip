@@ -2,6 +2,8 @@ package com.example.ledsoon.ghostssip;
 
 import android.content.Context;
 import android.os.Bundle;
+import android.support.v4.app.Fragment;
+import android.support.v4.view.ViewPager;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.view.LayoutInflater;
@@ -22,6 +24,7 @@ public class MainActivity extends AppCompatActivity {
     private TextView title;
     private EditText newName;
     private SpaceNavigationView bottomMenu;
+    private ViewPager viewPager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -32,7 +35,9 @@ public class MainActivity extends AppCompatActivity {
         title = getSupportActionBar().getCustomView().findViewById(R.id.title);
         bottomMenu = findViewById(R.id.bottomMenu);
         bottomMenu.initWithSaveInstanceState(savedInstanceState);
+        viewPager = findViewById(R.id.viewPager);
         setUpBottomMenu();
+        setUpViewPager();
     }
 
     @Override
@@ -52,11 +57,31 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void onItemClick(int itemIndex, String itemName) {
+                viewPager.setCurrentItem(itemIndex, true);
             }
 
             @Override
             public void onItemReselected(int itemIndex, String itemName) {
             }
+        });
+    }
+
+    private void setUpViewPager() {
+        Fragment[] fragments = {
+                Fragment.instantiate(this, MessagesListFragment.class.getName()),
+                Fragment.instantiate(this, MapFragment.class.getName()),
+        };
+        ViewPagerAdapter viewPagerAdapter = new ViewPagerAdapter(getSupportFragmentManager(), fragments);
+        viewPager.setAdapter(viewPagerAdapter);
+        viewPager.addOnPageChangeListener(new ViewPager.OnPageChangeListener() {
+            @Override
+            public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {}
+            @Override
+            public void onPageSelected(int position) {
+                bottomMenu.changeCurrentItem(position);
+            }
+            @Override
+            public void onPageScrollStateChanged(int state) {}
         });
     }
 
