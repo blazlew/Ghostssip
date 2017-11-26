@@ -33,4 +33,5 @@ dependencies {
     androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.1'
     compile 'com.crowdfire.cfalertdialog:cfalertdialog:1.0.1'
     compile 'com.github.armcha:SpaceNavigationView:1.6.0'
+    compile 'com.github.jd-alexander:LikeButton:0.2.3'
 }
