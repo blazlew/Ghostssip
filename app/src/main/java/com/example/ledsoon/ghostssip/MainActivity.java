@@ -85,7 +85,7 @@ public class MainActivity extends AppCompatActivity {
                                 Toast.makeText(MainActivity.this, R.string.name_cant_be_empty, Toast.LENGTH_SHORT).show();
                             }else {
                                 title.setText(newName.getText().toString());
-                                Toast.makeText(MainActivity.this, R.string.name_changed_to + newName.getText().toString(), Toast.LENGTH_SHORT).show();
+                                Toast.makeText(MainActivity.this, getString(R.string.name_changed_to).concat(newName.getText().toString()), Toast.LENGTH_SHORT).show();
                                 dialog.dismiss();
                             }
                         });
