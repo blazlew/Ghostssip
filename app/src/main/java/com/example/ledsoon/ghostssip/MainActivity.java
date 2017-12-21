@@ -22,7 +22,7 @@ import com.luseen.spacenavigation.SpaceOnClickListener;
 public class MainActivity extends AppCompatActivity {
 
     private TextView title;
-    private EditText newName;
+    private EditText newName, newMessage;
     private SpaceNavigationView bottomMenu;
     private ViewPager viewPager;
 
@@ -53,6 +53,22 @@ public class MainActivity extends AppCompatActivity {
         bottomMenu.setSpaceOnClickListener(new SpaceOnClickListener() {
             @Override
             public void onCentreButtonClick() {
+                LayoutInflater layoutInflater = (LayoutInflater) getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+                View newMessageDialogHeaderView = layoutInflater.inflate(R.layout.new_message_dialog_header_layout, null, false);
+                newMessage = newMessageDialogHeaderView.findViewById(R.id.newMessage);
+
+                CFAlertDialog.Builder builder = new CFAlertDialog.Builder(MainActivity.this)
+                        .setDialogStyle(CFAlertDialog.CFAlertStyle.BOTTOM_SHEET)
+                        .setHeaderView(newMessageDialogHeaderView)
+                        .addButton(getString(R.string.send), -1, -1, CFAlertDialog.CFAlertActionStyle.POSITIVE, CFAlertDialog.CFAlertActionAlignment.JUSTIFIED, (dialog, which) -> {
+                            if(newMessage.getText().length() <= 0){
+                                Toast.makeText(MainActivity.this, R.string.message_cant_be_empty, Toast.LENGTH_SHORT).show();
+                            }else {
+                                Toast.makeText(MainActivity.this, R.string.message_sent, Toast.LENGTH_SHORT).show();
+                                dialog.dismiss();
+                            }
+                        });
+                builder.show();
             }
 
             @Override
@@ -97,14 +113,14 @@ public class MainActivity extends AppCompatActivity {
         switch (item.getItemId()) {
             case R.id.action_edit:
                 LayoutInflater layoutInflater = (LayoutInflater) getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-                View dialogHeaderView = layoutInflater.inflate(R.layout.dialog_header_layout, null, false);
-                newName = dialogHeaderView.findViewById(R.id.newName);
+                View nameChangeDialogHeaderView = layoutInflater.inflate(R.layout.name_change_dialog_header_layout, null, false);
+                newName = nameChangeDialogHeaderView.findViewById(R.id.newName);
                 newName.setText(title.getText());
                 newName.setSelection(newName.getText().length());
 
                 CFAlertDialog.Builder builder = new CFAlertDialog.Builder(this)
                         .setDialogStyle(CFAlertDialog.CFAlertStyle.NOTIFICATION)
-                        .setHeaderView(dialogHeaderView)
+                        .setHeaderView(nameChangeDialogHeaderView)
                         .addButton(getString(R.string.save), -1, -1, CFAlertDialog.CFAlertActionStyle.POSITIVE, CFAlertDialog.CFAlertActionAlignment.JUSTIFIED, (dialog, which) -> {
                             if(newName.getText().length() <= 0){
                                 Toast.makeText(MainActivity.this, R.string.name_cant_be_empty, Toast.LENGTH_SHORT).show();
