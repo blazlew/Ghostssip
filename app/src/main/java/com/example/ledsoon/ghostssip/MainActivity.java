@@ -1,8 +1,12 @@
 package com.example.ledsoon.ghostssip;
 
 import android.content.Context;
+import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Bundle;
+import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
+import android.support.v4.content.ContextCompat;
 import android.support.v4.view.ViewPager;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
@@ -15,16 +19,25 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.crowdfire.cfalertdialog.CFAlertDialog;
+import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.LocationServices;
 import com.luseen.spacenavigation.SpaceItem;
 import com.luseen.spacenavigation.SpaceNavigationView;
 import com.luseen.spacenavigation.SpaceOnClickListener;
 
+import java.util.Calendar;
+import java.util.GregorianCalendar;
+import java.util.HashMap;
+
 public class MainActivity extends AppCompatActivity {
 
+    private static final int MY_PERMISSION_ACCESS_COARSE_LOCATION = 11;
+    private final String serverBaseURL = "http://192.168.0.175";
     private TextView title;
     private EditText newName, newMessage;
     private SpaceNavigationView bottomMenu;
     private ViewPager viewPager;
+    private FusedLocationProviderClient fusedLocationProviderClient;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -38,12 +51,20 @@ public class MainActivity extends AppCompatActivity {
         viewPager = findViewById(R.id.viewPager);
         setUpBottomMenu();
         setUpViewPager();
+        fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this);
+        requestLocationPermission();
     }
 
     @Override
     protected void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
         bottomMenu.onSaveInstanceState(outState);
+    }
+
+    private void requestLocationPermission() {
+        if(ContextCompat.checkSelfPermission( this, android.Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions( this, new String[] {android.Manifest.permission.ACCESS_COARSE_LOCATION}, MY_PERMISSION_ACCESS_COARSE_LOCATION );
+        }
     }
 
     private void setUpBottomMenu() {
@@ -56,14 +77,32 @@ public class MainActivity extends AppCompatActivity {
                 LayoutInflater layoutInflater = (LayoutInflater) getSystemService(Context.LAYOUT_INFLATER_SERVICE);
                 View newMessageDialogHeaderView = layoutInflater.inflate(R.layout.new_message_dialog_header_layout, null, false);
                 newMessage = newMessageDialogHeaderView.findViewById(R.id.newMessage);
+                HashMap < String, String > newMessageParameters = new HashMap<>();
+                if (Build.VERSION.SDK_INT >= 23 &&
+                        ContextCompat.checkSelfPermission( MainActivity.this, android.Manifest.permission.ACCESS_FINE_LOCATION ) != PackageManager.PERMISSION_GRANTED &&
+                        ContextCompat.checkSelfPermission( MainActivity.this, android.Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                    Toast.makeText(MainActivity.this, R.string.allow_app_to_access_devices_location, Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                fusedLocationProviderClient.getLastLocation().addOnSuccessListener(MainActivity.this, location -> {
+                            if (location != null) {
+                                newMessageParameters.put("latitude", String.valueOf(location.getLatitude()));
+                                newMessageParameters.put("longitude", String.valueOf(location.getLongitude()));
+                            }
+                        });
 
                 CFAlertDialog.Builder builder = new CFAlertDialog.Builder(MainActivity.this)
                         .setDialogStyle(CFAlertDialog.CFAlertStyle.BOTTOM_SHEET)
                         .setHeaderView(newMessageDialogHeaderView)
                         .addButton(getString(R.string.send), -1, -1, CFAlertDialog.CFAlertActionStyle.POSITIVE, CFAlertDialog.CFAlertActionAlignment.JUSTIFIED, (dialog, which) -> {
-                            if(newMessage.getText().length() <= 0){
+                            if (newMessage.getText().length() <= 0) {
                                 Toast.makeText(MainActivity.this, R.string.message_cant_be_empty, Toast.LENGTH_SHORT).show();
-                            }else {
+                            } else {
+                                newMessageParameters.put("author", title.getText().toString());
+                                newMessageParameters.put("message_body", newMessage.getText().toString());
+                                GregorianCalendar gregorianCalendar = new GregorianCalendar();
+                                gregorianCalendar.add(Calendar.DATE, 1);
+                                newMessageParameters.put("expiry_date", gregorianCalendar.getTime().toString());
                                 Toast.makeText(MainActivity.this, R.string.message_sent, Toast.LENGTH_SHORT).show();
                                 dialog.dismiss();
                             }

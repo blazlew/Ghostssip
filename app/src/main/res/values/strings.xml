@@ -16,4 +16,5 @@
     <string name="send">SEND</string>
     <string name="message_cant_be_empty">Message can\'t be empty</string>
     <string name="message_sent">Message sent!</string>
+    <string name="allow_app_to_access_devices_location">Allow app to access device\'s location!</string>
 </resources>
