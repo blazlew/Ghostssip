@@ -18,6 +18,11 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+
+import com.android.volley.toolbox.StringRequest;
+import com.android.volley.toolbox.Volley;
 import com.crowdfire.cfalertdialog.CFAlertDialog;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
@@ -25,9 +30,11 @@ import com.luseen.spacenavigation.SpaceItem;
 import com.luseen.spacenavigation.SpaceNavigationView;
 import com.luseen.spacenavigation.SpaceOnClickListener;
 
+import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
+import java.util.Map;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -77,7 +84,7 @@ public class MainActivity extends AppCompatActivity {
                 LayoutInflater layoutInflater = (LayoutInflater) getSystemService(Context.LAYOUT_INFLATER_SERVICE);
                 View newMessageDialogHeaderView = layoutInflater.inflate(R.layout.new_message_dialog_header_layout, null, false);
                 newMessage = newMessageDialogHeaderView.findViewById(R.id.newMessage);
-                HashMap < String, String > newMessageParameters = new HashMap<>();
+                Map <String, String> newMessageParameters = new HashMap<>();
                 if (Build.VERSION.SDK_INT >= 23 &&
                         ContextCompat.checkSelfPermission( MainActivity.this, android.Manifest.permission.ACCESS_FINE_LOCATION ) != PackageManager.PERMISSION_GRANTED &&
                         ContextCompat.checkSelfPermission( MainActivity.this, android.Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
@@ -102,8 +109,10 @@ public class MainActivity extends AppCompatActivity {
                                 newMessageParameters.put("message_body", newMessage.getText().toString());
                                 GregorianCalendar gregorianCalendar = new GregorianCalendar();
                                 gregorianCalendar.add(Calendar.DATE, 1);
-                                newMessageParameters.put("expiry_date", gregorianCalendar.getTime().toString());
-                                Toast.makeText(MainActivity.this, R.string.message_sent, Toast.LENGTH_SHORT).show();
+                                SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                                String expiryDate = simpleDateFormat.format(gregorianCalendar.getTime());
+                                newMessageParameters.put("expiry_date", expiryDate);
+                                sendToRemoteDatabase(newMessageParameters);
                                 dialog.dismiss();
                             }
                         });
@@ -176,5 +185,23 @@ public class MainActivity extends AppCompatActivity {
                 return super.onOptionsItemSelected(item);
 
         }
+    }
+
+    private void sendToRemoteDatabase(Map<String, String> message) {
+        RequestQueue requestQueue = Volley.newRequestQueue(this);
+        StringRequest stringRequest = new StringRequest(Request.Method.POST, serverBaseURL.concat("/ghostssip/put_message.php"),
+                response -> {
+                    if(response.equals("success")) {
+                        Toast.makeText(MainActivity.this, R.string.message_sent, Toast.LENGTH_SHORT).show();
+                    }
+                },
+                error -> Toast.makeText(MainActivity.this, R.string.error_the_message_wasnt_sent, Toast.LENGTH_SHORT).show()){
+            @Override
+            protected Map<String,String> getParams(){
+                return message;
+            }
+
+        };
+        requestQueue.add(stringRequest);
     }
 }
