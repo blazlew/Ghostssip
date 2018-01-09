@@ -28,6 +28,7 @@ import com.google.android.gms.tasks.OnSuccessListener;
 
 import org.json.JSONArray;
 import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -37,7 +38,6 @@ public class MessagesListFragment extends Fragment {
 
     private final String serverBaseURL = "http://192.168.0.175";
     private RecyclerView messagesListRecyclerView;
-    private JSONArray listOfMessages;
     private FusedLocationProviderClient fusedLocationProviderClient;
 
     public MessagesListFragment() {
@@ -55,10 +55,6 @@ public class MessagesListFragment extends Fragment {
         linearLayoutManager.setOrientation(LinearLayoutManager.VERTICAL);
         messagesListRecyclerView.setLayoutManager(linearLayoutManager);
         getListOfMessages();
-
-        MessagesAdapter messagesAdapter = new MessagesAdapter(createRandomNewsList(30));
-
-        messagesListRecyclerView.setAdapter(messagesAdapter);
     }
 
     private void getListOfMessages() {
@@ -80,21 +76,29 @@ public class MessagesListFragment extends Fragment {
     private void getMessagesNearLocation(Location location) {
         RequestQueue requestQueue = Volley.newRequestQueue(getContext());
         JsonArrayRequest jsonArrayRequest = new JsonArrayRequest(serverBaseURL.concat("/ghostssip/get_messages.php?usersLatitude=" + location.getLatitude() + "&usersLongitude=" + location.getLongitude()),
-                response -> listOfMessages = response,
+                this::viewMessages,
                 error -> {if(error instanceof ParseError) Toast.makeText(getContext(), R.string.no_messages_found_in_your_area, Toast.LENGTH_SHORT).show();});
         requestQueue.add(jsonArrayRequest);
     }
 
-    private List<SingleMessage> createRandomNewsList(int size) {
-        List<SingleMessage> result = new ArrayList<>();
-        for (int i = 1; i <= size; i++) {
+
+    private void viewMessages(JSONArray jsonArrayOfMessages) {
+        List<SingleMessage> listOfMessages = new ArrayList<>();
+        for (int i = 0; i < jsonArrayOfMessages.length(); i++) {
             SingleMessage singleMessage = new SingleMessage();
-            singleMessage.author = getString(R.string.author) + i;
-            singleMessage.content = getString(R.string.message) + i;
-            singleMessage.isLiked = false;
-            singleMessage.isDisliked = false;
-            result.add(singleMessage);
+            try {
+                JSONObject message = jsonArrayOfMessages.getJSONObject(i);
+                singleMessage.id = message.getInt("id");
+                singleMessage.author = message.getString("author");
+                singleMessage.content = message.getString("message_body");
+                singleMessage.isLiked = false;
+                singleMessage.isDisliked = false;
+                listOfMessages.add(singleMessage);
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
         }
-        return result;
+        MessagesAdapter messagesAdapter = new MessagesAdapter(listOfMessages);
+        messagesListRecyclerView.setAdapter(messagesAdapter);
     }
 }
