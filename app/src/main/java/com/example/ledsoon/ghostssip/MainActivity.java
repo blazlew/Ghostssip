@@ -6,6 +6,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentTransaction;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.view.ViewPager;
 import android.support.v7.app.ActionBar;
@@ -192,6 +193,7 @@ public class MainActivity extends AppCompatActivity {
         StringRequest stringRequest = new StringRequest(Request.Method.POST, serverBaseURL.concat("/ghostssip/put_message.php"),
                 response -> {
                     if(response.equals("success")) {
+                        refreshAllFragments();
                         Toast.makeText(MainActivity.this, R.string.message_sent, Toast.LENGTH_SHORT).show();
                     }
                 },
@@ -203,5 +205,14 @@ public class MainActivity extends AppCompatActivity {
 
         };
         requestQueue.add(stringRequest);
+    }
+
+    private void refreshAllFragments() {
+        for(Fragment fragment: getSupportFragmentManager().getFragments()){
+            FragmentTransaction fragmentTransaction = getSupportFragmentManager().beginTransaction();
+            fragmentTransaction.detach(fragment);
+            fragmentTransaction.attach(fragment);
+            fragmentTransaction.commit();
+        }
     }
 }
