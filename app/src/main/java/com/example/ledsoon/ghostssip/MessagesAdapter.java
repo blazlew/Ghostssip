@@ -6,46 +6,86 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.toolbox.StringRequest;
+import com.android.volley.toolbox.Volley;
 import com.like.LikeButton;
 import com.like.OnLikeListener;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Created by ledsoon on 26.11.17.
  */
 
-public class MessagesAdapter extends RecyclerView.Adapter<MessagesAdapter.MessagesViewHolder> {
+public class MessagesAdapter extends RecyclerView.Adapter<MessagesAdapter.MessageViewHolder> {
+    private RequestQueue requestQueue;
     private List<SingleMessage> messagesList;
+    private final String serverBaseURL = "http://192.168.0.175";
+    private final int MESSAGE_TIME_MODIFIER = 6;
 
     public MessagesAdapter(List<SingleMessage> messagesList) {
         this.messagesList = messagesList;
     }
 
     @Override
-    public MessagesViewHolder onCreateViewHolder(ViewGroup viewGroup, int i) {
+    public MessageViewHolder onCreateViewHolder(ViewGroup viewGroup, int i) {
+        requestQueue = Volley.newRequestQueue(viewGroup.getContext());
         View itemView = LayoutInflater.
                 from(viewGroup.getContext()).
                 inflate(R.layout.message_card_layout, viewGroup, false);
 
-        return new MessagesViewHolder(itemView);
+        return new MessageViewHolder(itemView);
     }
 
     @Override
-    public void onBindViewHolder(MessagesViewHolder messagesViewHolder, int position) {
+    public void onBindViewHolder(MessageViewHolder messageViewHolder, int position) {
         SingleMessage singleMessage = messagesList.get(position);
-        messagesViewHolder.authorTextView.setText(singleMessage.author);
-        messagesViewHolder.messageTextView.setText(singleMessage.content);
+        messageViewHolder.authorTextView.setText(singleMessage.author);
+        messageViewHolder.messageTextView.setText(singleMessage.content);
         if(singleMessage.isLiked) {
-            messagesViewHolder.likeButton.setLiked(true);
+            messageViewHolder.likeButton.setLiked(true);
         }else {
-            messagesViewHolder.likeButton.setLiked(false);
+            messageViewHolder.likeButton.setLiked(false);
         }
         if(singleMessage.isDisliked) {
-            messagesViewHolder.dislikeButton.setLiked(true);
+            messageViewHolder.dislikeButton.setLiked(true);
         }else {
-            messagesViewHolder.dislikeButton.setLiked(false);
+            messageViewHolder.dislikeButton.setLiked(false);
         }
+        messageViewHolder.likeButton.setOnLikeListener(new OnLikeListener() {
+            @Override
+            public void liked(LikeButton likeButton) {
+                if(messageViewHolder.dislikeButton.isLiked()) {
+                    messageViewHolder.dislikeButton.setLiked(false);
+                    modifyExpiryDateOfMessageOnRemoteDatabase(singleMessage.id, 2 * MESSAGE_TIME_MODIFIER);
+                }else {
+                    modifyExpiryDateOfMessageOnRemoteDatabase(singleMessage.id, MESSAGE_TIME_MODIFIER);
+                }
+            }
+            @Override
+            public void unLiked(LikeButton likeButton) {
+                modifyExpiryDateOfMessageOnRemoteDatabase(singleMessage.id, -MESSAGE_TIME_MODIFIER);
+            }
+        });
+        messageViewHolder.dislikeButton.setOnLikeListener(new OnLikeListener() {
+            @Override
+            public void liked(LikeButton dislikeButton) {
+                if(messageViewHolder.likeButton.isLiked()) {
+                    messageViewHolder.likeButton.setLiked(false);
+                    modifyExpiryDateOfMessageOnRemoteDatabase(singleMessage.id, -2 * MESSAGE_TIME_MODIFIER);
+                }else {
+                    modifyExpiryDateOfMessageOnRemoteDatabase(singleMessage.id, -MESSAGE_TIME_MODIFIER);
+                }
+            }
+            @Override
+            public void unLiked(LikeButton dislikeButton) {
+                modifyExpiryDateOfMessageOnRemoteDatabase(singleMessage.id, MESSAGE_TIME_MODIFIER);
+            }
+        });
     }
 
     @Override
@@ -53,34 +93,35 @@ public class MessagesAdapter extends RecyclerView.Adapter<MessagesAdapter.Messag
         return messagesList.size();
     }
 
-    static class MessagesViewHolder extends RecyclerView.ViewHolder {
+    static class MessageViewHolder extends RecyclerView.ViewHolder {
         TextView authorTextView, messageTextView;
         LikeButton likeButton, dislikeButton;
 
-        MessagesViewHolder(View v) {
+        MessageViewHolder(View v) {
             super(v);
             authorTextView = v.findViewById(R.id.authorTextView);
             messageTextView = v.findViewById(R.id.messageTextView);
             likeButton = v.findViewById(R.id.likeButton);
             dislikeButton = v.findViewById(R.id.dislikeButton);
-            likeButton.setOnLikeListener(new OnLikeListener() {
-                @Override
-                public void liked(LikeButton likeButton) {
-                    dislikeButton.setLiked(false);
-                }
-                @Override
-                public void unLiked(LikeButton likeButton) {
-                }
-            });
-            dislikeButton.setOnLikeListener(new OnLikeListener() {
-                @Override
-                public void liked(LikeButton dislikeButton) {
-                    likeButton.setLiked(false);
-                }
-                @Override
-                public void unLiked(LikeButton dislikeButton) {
-                }
-            });
         }
+    }
+
+    private void modifyExpiryDateOfMessageOnRemoteDatabase(int id, int numberOfHoursToAdd) {
+        Map <String, String> messageBody = new HashMap<>();
+        messageBody.put("id", String.valueOf(id));
+        messageBody.put("numberOfHoursToAdd", String.valueOf(numberOfHoursToAdd));
+        StringRequest stringRequest = new StringRequest(Request.Method.POST, serverBaseURL.concat("/ghostssip/modify_expiry_date_of_message.php"),
+                response -> {
+                    if(response.equals("success")) {
+                    }
+                },
+                error -> {}){
+            @Override
+            protected Map<String, String> getParams(){
+                return messageBody;
+            }
+
+        };
+        requestQueue.add(stringRequest);
     }
 }
