@@ -1,6 +1,8 @@
 package com.example.ledsoon.ghostssip;
 
 
+import android.content.Context;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.os.Build;
@@ -34,6 +36,7 @@ public class MessagesListFragment extends Fragment {
     private final String serverBaseURL = "http://192.168.0.175";
     private RecyclerView messagesListRecyclerView;
     private FusedLocationProviderClient fusedLocationProviderClient;
+    private SharedPreferences userVotes;
 
     public MessagesListFragment() {
     }
@@ -49,6 +52,7 @@ public class MessagesListFragment extends Fragment {
         LinearLayoutManager linearLayoutManager = new LinearLayoutManager(getContext());
         linearLayoutManager.setOrientation(LinearLayoutManager.VERTICAL);
         messagesListRecyclerView.setLayoutManager(linearLayoutManager);
+        userVotes = getContext().getSharedPreferences("USER_VOTES", Context.MODE_PRIVATE);
         getListOfMessages();
     }
 
@@ -88,6 +92,14 @@ public class MessagesListFragment extends Fragment {
                 singleMessage.content = message.getString("message_body");
                 singleMessage.isLiked = false;
                 singleMessage.isDisliked = false;
+                String userVote = userVotes.getString(String.valueOf(singleMessage.id), null);
+                if(userVote != null){
+                    if(userVote.equals("liked")){
+                        singleMessage.isLiked = true;
+                    }else{
+                        singleMessage.isDisliked = true;
+                    }
+                }
                 listOfMessages.add(singleMessage);
             } catch (JSONException e) {
                 e.printStackTrace();

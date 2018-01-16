@@ -1,5 +1,7 @@
 package com.example.ledsoon.ghostssip;
 
+import android.content.Context;
+import android.content.SharedPreferences;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -26,6 +28,7 @@ public class MessagesAdapter extends RecyclerView.Adapter<MessagesAdapter.Messag
     private List<SingleMessage> messagesList;
     private final String serverBaseURL = "http://192.168.0.175";
     private final int MESSAGE_TIME_MODIFIER = 6;
+    private SharedPreferences.Editor userVotesEditor;
 
     public MessagesAdapter(List<SingleMessage> messagesList) {
         this.messagesList = messagesList;
@@ -34,6 +37,7 @@ public class MessagesAdapter extends RecyclerView.Adapter<MessagesAdapter.Messag
     @Override
     public MessageViewHolder onCreateViewHolder(ViewGroup viewGroup, int i) {
         requestQueue = Volley.newRequestQueue(viewGroup.getContext());
+        userVotesEditor = viewGroup.getContext().getSharedPreferences("USER_VOTES", Context.MODE_PRIVATE).edit();
         View itemView = LayoutInflater.
                 from(viewGroup.getContext()).
                 inflate(R.layout.message_card_layout, viewGroup, false);
@@ -65,10 +69,12 @@ public class MessagesAdapter extends RecyclerView.Adapter<MessagesAdapter.Messag
                 }else {
                     modifyExpiryDateOfMessageOnRemoteDatabase(singleMessage.id, MESSAGE_TIME_MODIFIER);
                 }
+                userVotesEditor.putString(String.valueOf(singleMessage.id), "liked");
             }
             @Override
             public void unLiked(LikeButton likeButton) {
                 modifyExpiryDateOfMessageOnRemoteDatabase(singleMessage.id, -MESSAGE_TIME_MODIFIER);
+                userVotesEditor.remove(String.valueOf(singleMessage.id));
             }
         });
         messageViewHolder.dislikeButton.setOnLikeListener(new OnLikeListener() {
@@ -80,10 +86,12 @@ public class MessagesAdapter extends RecyclerView.Adapter<MessagesAdapter.Messag
                 }else {
                     modifyExpiryDateOfMessageOnRemoteDatabase(singleMessage.id, -MESSAGE_TIME_MODIFIER);
                 }
+                userVotesEditor.putString(String.valueOf(singleMessage.id), "disliked");
             }
             @Override
             public void unLiked(LikeButton dislikeButton) {
                 modifyExpiryDateOfMessageOnRemoteDatabase(singleMessage.id, MESSAGE_TIME_MODIFIER);
+                userVotesEditor.remove(String.valueOf(singleMessage.id));
             }
         });
     }
@@ -113,6 +121,7 @@ public class MessagesAdapter extends RecyclerView.Adapter<MessagesAdapter.Messag
         StringRequest stringRequest = new StringRequest(Request.Method.POST, serverBaseURL.concat("/ghostssip/modify_expiry_date_of_message.php"),
                 response -> {
                     if(response.equals("success")) {
+                        userVotesEditor.apply();
                     }
                 },
                 error -> {}){
